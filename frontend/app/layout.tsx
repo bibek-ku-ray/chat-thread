@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Raleway } from "next/font/google";
 import "./globals.css";
+import {ClerkProvider} from "@clerk/nextjs";
 
 const raleway = Raleway({subsets:['latin'],variable:'--font-sans'});
 
@@ -25,12 +26,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={raleway.variable}>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
-    </html>
+      <ClerkProvider>
+        <html lang="en" className={`${raleway.variable} dark`}>
+            <body
+                className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+            >
+            <div className="flex min-h-screen flex-col bg-background text-foreground">
+                <main className="flex flex-1 flex-col">
+                    <div className="mx-auto flex w-full max-w-6xl  flex-1 flex-col px-4 py-8 md:py-10">
+                        {children}
+                    </div>
+                </main>
+            </div>
+            </body>
+        </html>
+      </ClerkProvider>
   );
 }
