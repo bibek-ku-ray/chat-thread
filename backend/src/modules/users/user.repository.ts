@@ -48,3 +48,72 @@ export async function upsertUserFromClerkProfile(params: {
 
     return hydrateUser(row)
 }
+
+export async function repoUpdateUserProfile(params: {
+    clerkUserId: string;
+    displayName?: string;
+    handle?: string;
+    bio?: string;
+    avatarUrl?: string;
+}): Promise<User> {
+
+    const { clerkUserId, displayName, handle, bio, avatarUrl } = params
+
+    const setClauses: string[] = []
+    const values: unknown[] = [clerkUserId]
+    let idx = 2; // idx 1 will be always for clerkUserId
+
+    if(typeof displayName !== undefined) {
+        setClauses.push(`display_name = ${idx}`)
+        values.push(displayName)
+        idx++
+    }
+
+    if(typeof handle !== undefined) {
+        setClauses.push(`handle = ${idx}`)
+        values.push(handle)
+        idx++
+    }
+
+    if(typeof bio !== undefined) {
+        setClauses.push(`bio = ${idx}`)
+        values.push(bio)
+        idx++
+    }
+
+    if(typeof avatarUrl !== undefined) {
+        setClauses.push(`avatar_url = ${idx}`)
+        values.push(avatarUrl)
+        idx++
+    }
+
+    setClauses.push(`updated_at = NOW()`)
+
+    const result = await query<UserRow>(
+        `
+        UPDATE uses
+        SET ${setClauses.join(", ")}
+        WHERE clerk_user_id = $1
+        RETURNING
+            id,
+            clerk_user_id,
+            display_name,
+            handle,
+            avatar_url,
+            bio,
+            created_at,
+            updated_at
+        `, values
+    )
+
+    if(result.rows.length === 0) {
+        throw new Error(`No user found with clerk id: ${clerkUserId}`)
+    }
+
+    const row = result.rows[0]
+    if (!row) {
+        throw new Error("Update user failed: no row returned.")
+    }
+
+    return hydrateUser(row)
+}
