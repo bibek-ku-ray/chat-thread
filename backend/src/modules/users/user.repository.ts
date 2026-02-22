@@ -1,28 +1,28 @@
-import type {User, UserRow} from "./user.types.ts";
-import {query} from "../../db/db.ts";
+import type { User, UserRow } from "./user.types.ts";
+import { query } from "../../db/db.ts";
 
 function hydrateUser(row: UserRow): User {
-    return {
-        id: row.id,
-        clerkUserId: row.clerk_user_id,
-        displayName: row.display_name,
-        handle: row.handle,
-        bio: row.bio,
-        avatarUrl: row.avatar_url,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-    };
+  return {
+    id: row.id,
+    clerkUserId: row.clerk_user_id,
+    displayName: row.display_name,
+    handle: row.handle,
+    bio: row.bio,
+    avatarUrl: row.avatar_url,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 export async function upsertUserFromClerkProfile(params: {
-    clerkUserId: string;
-    displayName: string | null;
-    avatarUrl: string | null;
-}) : Promise<User> {
-    const {clerkUserId, displayName, avatarUrl}  = params
+  clerkUserId: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+}): Promise<User> {
+  const { clerkUserId, displayName, avatarUrl } = params;
 
-    const result = await query<UserRow>(
-        `
+  const result = await query<UserRow>(
+    `
         INSERT INTO users (clerk_user_id, display_name, avatar_url)
         VALUES ($1, $2, $3)
         ON CONFLICT (clerk_user_id)
@@ -38,60 +38,63 @@ export async function upsertUserFromClerkProfile(params: {
             created_at,
             updated_at
         `,
-        [clerkUserId, displayName, avatarUrl]
-    )
+    [clerkUserId, displayName, avatarUrl],
+  );
 
-    const row = result.rows[0]
-    if (!row) {
-        throw new Error("Upsert user failed: no row returned.")
-    }
+  const row = result.rows[0];
+  if (!row) {
+    throw new Error("Upsert user failed: no row returned.");
+  }
 
-    return hydrateUser(row)
+  return hydrateUser(row);
 }
 
 export async function repoUpdateUserProfile(params: {
-    clerkUserId: string;
-    displayName?: string;
-    handle?: string;
-    bio?: string;
-    avatarUrl?: string;
+  clerkUserId: string;
+  displayName?: string;
+  handle?: string;
+  bio?: string;
+  avatarUrl?: string;
 }): Promise<User> {
+  const { clerkUserId, displayName, handle, bio, avatarUrl } = params;
 
-    const { clerkUserId, displayName, handle, bio, avatarUrl } = params
+  const setClauses: string[] = [];
+  const values: unknown[] = [clerkUserId];
+  let idx = 2; // idx 1 will be always for clerkUserId
 
-    const setClauses: string[] = []
-    const values: unknown[] = [clerkUserId]
-    let idx = 2; // idx 1 will be always for clerkUserId
+  if (
+    displayName !== undefined &&
+    displayName !== null &&
+    displayName.trim() !== ""
+  ) {
+    setClauses.push(`display_name = $${idx}`);
+    values.push(displayName);
+    idx++;
+  }
 
-    if(typeof displayName !== undefined) {
-        setClauses.push(`display_name = ${idx}`)
-        values.push(displayName)
-        idx++
-    }
+  if (handle !== undefined && handle !== null) {
+    setClauses.push(`handle = $${idx}`);
+    values.push(handle);
+    idx++;
+  }
 
-    if(typeof handle !== undefined) {
-        setClauses.push(`handle = ${idx}`)
-        values.push(handle)
-        idx++
-    }
+  if (bio !== undefined && bio !== null) {
+    setClauses.push(`bio = $${idx}`);
+    values.push(bio);
+    idx++;
+  }
 
-    if(typeof bio !== undefined) {
-        setClauses.push(`bio = ${idx}`)
-        values.push(bio)
-        idx++
-    }
+  if (avatarUrl !== undefined && avatarUrl !== null) {
+    setClauses.push(`avatar_url = $${idx}`);
+    values.push(avatarUrl);
+    idx++;
+  }
 
-    if(typeof avatarUrl !== undefined) {
-        setClauses.push(`avatar_url = ${idx}`)
-        values.push(avatarUrl)
-        idx++
-    }
+  setClauses.push(`updated_at = NOW()`);
 
-    setClauses.push(`updated_at = NOW()`)
-
-    const result = await query<UserRow>(
-        `
-        UPDATE uses
+  const result = await query<UserRow>(
+    `
+        UPDATE users
         SET ${setClauses.join(", ")}
         WHERE clerk_user_id = $1
         RETURNING
@@ -103,17 +106,18 @@ export async function repoUpdateUserProfile(params: {
             bio,
             created_at,
             updated_at
-        `, values
-    )
+        `,
+    values,
+  );
 
-    if(result.rows.length === 0) {
-        throw new Error(`No user found with clerk id: ${clerkUserId}`)
-    }
+  if (result.rows.length === 0) {
+    throw new Error(`No user found with clerk id: ${clerkUserId}`);
+  }
 
-    const row = result.rows[0]
-    if (!row) {
-        throw new Error("Update user failed: no row returned.")
-    }
+  const row = result.rows[0];
+  if (!row) {
+    throw new Error("Update user failed: no row returned.");
+  }
 
-    return hydrateUser(row)
+  return hydrateUser(row);
 }
