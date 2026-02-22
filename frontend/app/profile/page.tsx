@@ -1,13 +1,13 @@
 "use client";
 
-import React, {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import { z } from 'zod';
 import {SignedIn, SignedOut, useAuth} from "@clerk/nextjs";
 import {apiGet, apiPatch, createBrowserApiClient} from "@/lib/api-client";
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {toast} from "sonner";
-import {DownloadIcon, User} from "@phosphor-icons/react";
+import {DownloadIcon, UserIcon} from "@phosphor-icons/react";
 import {Card, CardContent, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
 import {Avatar, AvatarImage} from "@/components/ui/avatar";
 import {Input} from "@/components/ui/input";
@@ -136,7 +136,7 @@ const ProfilePage = () => {
                 <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8">
                     <div>
                         <h1 className="flex items-center text-3xl font-bold tracking-tight text-foreground">
-                            <User className="w-8 h-8 text-primary" />
+                            <UserIcon className="w-8 h-8 text-primary" />
                             Profile Settings
                         </h1>
                         <p className="mt-1 text-sm text-muted-foreground">
@@ -266,7 +266,7 @@ const ProfilePage = () => {
                                     <Button
                                         type="submit"
                                         disabled={isLoading || isSaving}
-                                        className="min-w-[150px] bg-primary text-primary-foreground hover:bg-primary/90"
+                                        className="min-w-37.5 bg-primary text-primary-foreground hover:bg-primary/90"
                                     >
                                         <DownloadIcon className="mr-2 w-4 h-4" />
                                         {isSaving ? "Saving..." : "Save Changes"}
