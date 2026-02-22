@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Raleway } from "next/font/google";
 import "./globals.css";
 import {ClerkProvider} from "@clerk/nextjs";
+import {Toaster} from "@/components/ui/sonner";
 
 const raleway = Raleway({subsets:['latin'],variable:'--font-sans'});
 
@@ -38,6 +39,7 @@ export default function RootLayout({
                     </div>
                 </main>
             </div>
+            <Toaster/>
             </body>
         </html>
       </ClerkProvider>
