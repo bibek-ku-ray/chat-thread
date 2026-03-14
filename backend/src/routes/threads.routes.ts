@@ -2,6 +2,8 @@ import { Router } from "express";
 import {
   createdThread,
   listCategories,
+  listThreads,
+  parseThreadListFilter,
 } from "../modules/threads/thread.repository";
 import { getAuth } from "@clerk/express";
 import { BadRequestError, UnauthorizedError } from "../lib/error";
@@ -78,5 +80,23 @@ threadsRouter.get("/threads/:id", async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+});
+
+threadsRouter.get("/threads", async (req, res, next) => {
+  try {
+    const filter = parseThreadListFilter({
+      page: req.query.page,
+      pageSize: req.query.pageSize,
+      category: req.query.category,
+      q: req.query.q,
+      sort: req.query.sort,
+    });
+
+    const extractListOfThreads = await listThreads(filter);
+
+    res.json({ data: extractListOfThreads });
+  } catch (err) {
+    next(err);
   }
 });
