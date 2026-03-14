@@ -4,9 +4,10 @@ import {
   listCategories,
 } from "../modules/threads/thread.repository";
 import { getAuth } from "@clerk/express";
-import { UnauthorizedError } from "../lib/error";
+import { BadRequestError, UnauthorizedError } from "../lib/error";
 import z from "zod";
 import { getUserFromClerk } from "../modules/users/user.service";
+import { getThreadDetailWithCount } from "../modules/threads/replies.repository";
 
 export const threadsRouter = Router();
 
@@ -28,7 +29,7 @@ threadsRouter.get("/categories", async (_req, res, next) => {
   }
 });
 
-threadsRouter.post("/thread", async (req, res, next) => {
+threadsRouter.post("/threads", async (req, res, next) => {
   try {
     const auth = getAuth(req);
 
@@ -48,6 +49,33 @@ threadsRouter.post("/thread", async (req, res, next) => {
     });
 
     res.status(201).json({ data: newlyCreatedThread });
+  } catch (error) {
+    next(error);
+  }
+});
+
+threadsRouter.get("/threads/:id", async (req, res, next) => {
+  try {
+    const threadId = Number(req.params.id);
+
+    if (!Number.isInteger(threadId) || threadId <= 0) {
+      throw new BadRequestError("Invalid thread id");
+    }
+
+    const auth = getAuth(req);
+
+    if (!auth.userId) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
+    const profile = await getUserFromClerk(auth.userId);
+    const viewerUserId = profile.user.id;
+
+    const thread = await getThreadDetailWithCount({ threadId, viewerUserId });
+
+    res.json({
+      data: thread,
+    });
   } catch (error) {
     next(error);
   }
